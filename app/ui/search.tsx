@@ -16,6 +16,7 @@ export default function Search({ placeholder }: { placeholder: string }) {
 
     // Read the current parameters.
     const params = new URLSearchParams (searchParams);
+    params.set ('page', '1'); // Set the pagination page back to 1
 
     if (term)
     {
