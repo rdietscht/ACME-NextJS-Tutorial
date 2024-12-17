@@ -2,6 +2,8 @@
 
 import { date, z } from 'zod';
 import { sql } from '@vercel/postgres';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 // The expected types of data for the Invoice entries in the database.
 const FormSchema = z.object ({
@@ -28,9 +30,14 @@ export async function createInvoice (formData: FormData)
     // Construct a new Data object with the 'YYYY-MM-DD' format.
     const date = new Date ().toISOString ().split ('T')[0];
 
-    // TODO - HANDLE ERRORS!
+    // Execute the sql statement on the server.
     await sql`
         INSERT INTO invoices (customer_id, amount, status, date)
         VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
     `;
+    // TODO - Handle errors!
+
+    // Send a new request to the server to render the new invoices data.
+    revalidatePath ('/dashboard/invoices');
+    redirect ('/dashboard/invoices');
 }
