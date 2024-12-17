@@ -17,6 +17,13 @@ const FormSchema = z.object ({
 const CreateInvoice = FormSchema.omit ({ id: true, date: true });
 const UpdateInvoice = FormSchema.omit ({ id: true, date: true });
 
+export async function deleteInvoice (id: string)
+{
+    await sql`DELETE FROM invoices WHERE id = ${id}`;
+    // No need to call redirect, since this should be called within the same revalidate path.
+    revalidatePath ('/dashboard/invoices');
+}
+
 export async function updateInvoice (id: string, formData: FormData)
 {
     const { customerId, amount, status } = UpdateInvoice.parse ({
