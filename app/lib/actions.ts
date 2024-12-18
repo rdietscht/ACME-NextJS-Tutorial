@@ -19,9 +19,19 @@ const UpdateInvoice = FormSchema.omit ({ id: true, date: true });
 
 export async function deleteInvoice (id: string)
 {
-    await sql`DELETE FROM invoices WHERE id = ${id}`;
-    // No need to call redirect, since this should be called within the same revalidate path.
-    revalidatePath ('/dashboard/invoices');
+    try
+    {
+        await sql`DELETE FROM invoices WHERE id = ${id}`;
+        // No need to call redirect, since this should be called within the same revalidate path.
+        revalidatePath ('/dashboard/invoices');
+        return { message: 'Deleted Invoice.' };
+
+    } catch (error)
+    {
+        return {
+            message: 'Database Error: Failed to delete invoice.',
+        };
+    }
 }
 
 export async function updateInvoice (id: string, formData: FormData)
@@ -34,11 +44,19 @@ export async function updateInvoice (id: string, formData: FormData)
 
     const amountInCents = amount * 100;
 
-    await sql`
-        UPDATE invoices
-        SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
-        WHERE id = ${id}
-    `;
+    try
+    {
+        await sql`
+            UPDATE invoices
+            SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
+            WHERE id = ${id}
+        `;
+    } catch (error)
+    {
+        return {
+            message: 'Database Error: Failed to update Invoice.',
+        };
+    }
 
     revalidatePath ('/dashboard/invoices');
     redirect ('/dashboard/invoices');
@@ -58,12 +76,18 @@ export async function createInvoice (formData: FormData)
     // Construct a new Data object with the 'YYYY-MM-DD' format.
     const date = new Date ().toISOString ().split ('T')[0];
 
-    // Execute the sql statement on the server.
-    await sql`
-        INSERT INTO invoices (customer_id, amount, status, date)
-        VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
-    `;
-    // TODO - Handle errors!
+    try {
+        // Execute the sql statement on the server.
+        await sql`
+            INSERT INTO invoices (customer_id, amount, status, date)
+            VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
+        `;
+    } catch (error)
+    {
+        return {
+            message: 'Database Error: Failed to create Invoice.',
+        };
+    }
 
     // Send a new request to the server to render the new invoices data.
     revalidatePath ('/dashboard/invoices');
