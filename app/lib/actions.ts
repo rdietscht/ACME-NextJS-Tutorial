@@ -8,9 +8,15 @@ import { redirect } from 'next/navigation';
 // The expected types of data for the Invoice entries in the database.
 const FormSchema = z.object ({
     id: z.string (),
-    customerId: z.string (),
-    amount: z.coerce.number (),
-    status: z.enum (['pending', 'paid']),
+    customerId: z.string ({
+        invalid_type_error: 'Please select a customer.', // Send friendly message if empty string detected
+    }),
+    amount: z.coerce
+        .number () // Force the entered input to be a number
+        .gt (0, { message: 'Please enter an amount greater than $0.' }), // Ensure the number is > 0
+    status: z.enum (['pending', 'paid'], {
+        invalid_type_error: 'Please select an invoice status.', // Send friendly message if empty string detected
+    }),
     date: z.string (),
 });
 
@@ -62,13 +68,38 @@ export async function updateInvoice (id: string, formData: FormData)
     redirect ('/dashboard/invoices');
 }
 
-export async function createInvoice (formData: FormData)
+// Custom msg state type used by the createInvoice formAction.
+export type State =
 {
-    const { customerId, amount, status } = CreateInvoice.parse ({
+    errors?: {
+        customerId?: string[];
+        amount?: string[];
+        status?: string[];
+    };
+    message?: string | null;
+};
+
+export async function createInvoice (prevState: State, formData: FormData)
+{
+    const validatedFields = CreateInvoice.safeParse ({
         customerId: formData.get ('customerId'),
         amount: formData.get ('amount'),
         status: formData.get ('status'),
     });
+
+    // console.log (validatedFields); // DEBUGGING!
+
+    // EARLY EXIT - One/more of the fields were invalid.
+    if (!validatedFields.success)
+    {
+        return {
+            errors: validatedFields.error.flatten ().fieldErrors,
+            message: 'Missing Fields. Failed to Create Invoice.',
+        };
+    }
+
+    // Extract the data from the validatedFields.data property.
+    const { customerId, amount, status } = validatedFields.data;
 
     // Convert monetary value to cents to avoid floating-point error.
     const amountInCents = amount * 100;
