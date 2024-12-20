@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { sql } from '@vercel/postgres';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { signIn } from '@/auth';
+import { AuthError } from 'next-auth';
 
 // The expected types of data for the Invoice entries in the database.
 const FormSchema = z.object ({
@@ -137,4 +139,29 @@ export async function createInvoice (prevState: State, formData: FormData)
     // Send a new request to the server to render the new invoices data.
     revalidatePath ('/dashboard/invoices');
     redirect ('/dashboard/invoices');
+}
+
+export async function authenticate (
+    prevState: string | undefined,
+    formData: FormData,
+)
+{
+    try
+    {
+        // Use the authentication logic from auth.ts via the credentials provider.
+        await signIn ('credentials', formData);
+    } catch (error)
+    {
+        if (error instanceof AuthError)
+        {
+            switch (error.type)
+            {
+                case 'CredentialsSignin':
+                    return 'Invalid credentials.';
+                default:
+                    return 'Something went wrong.';
+            }
+        }
+        throw error;
+    }
 }
