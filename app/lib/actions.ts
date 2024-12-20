@@ -5,7 +5,7 @@ import { sql } from '@vercel/postgres';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { signIn } from '@/auth';
-import { AuthError } from 'next-auth';
+import { AuthError } from '../../node_modules/.pnpm/next-auth@5.0.0-beta.25_next@15.1.0_react-dom@19.0.0-rc-cd22717c-20241013_react@19.0.0-rc-cd2_vpnyommcfiul5rcc26jgvsqwl4/node_modules/next-auth';
 
 // The expected types of data for the Invoice entries in the database.
 const FormSchema = z.object ({
